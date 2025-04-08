@@ -92,5 +92,13 @@ results_list <- survey_data %>%
 results_table <- results_list %>%
   bind_rows()
 
-# Calculate adjusted p values for multiple comparisons; 
-# consider Holm-Bonferroni approach https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method
+# Calculate adjusted p values for multiple comparisons (Holm-Bonferroni); all 
+# but five comparisons significant (three of the five were significant without 
+# multiple comparison correction)
+results_table$adj_p <- p.adjust(p = results_table$p,
+                                method = "holm")
+
+# Write this output of stats to file
+write.csv(x = results_table,
+          file = "output/pre-post-results.csv",
+          row.names = FALSE)
