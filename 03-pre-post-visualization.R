@@ -70,3 +70,8 @@ pre_post_plot <- ggplot(data = results, mapping = aes(y = question_id)) +
         strip.background = element_rect(fill = "#F0F0F0"),
         strip.text = element_text(size = 10))
 
+ggsave(filename = "output/pre-post-visualization.png",
+       plot = pre_post_plot,
+       height = 8,
+       width = 6.5,
+       units = "in")
