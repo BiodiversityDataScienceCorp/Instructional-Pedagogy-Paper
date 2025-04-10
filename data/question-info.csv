@@ -1,0 +1,23 @@
+question_id,question_text,question_category
+Q09,General knowledge of best pedagogical practices,Pedagogy knowledge
+Q10_1,The role memory plays in shaping if and how students learn,Pedagogy knowledge
+Q10_2,The role of practice in skills development,Pedagogy knowledge
+Q10_3,The role of feedback in skills development,Pedagogy knowledge
+Q11_1,"Equity, inclusion, and accessibility as it relates to teaching and learning",Pedagogy knowledge
+Q12_1,Motivation and the role it plays in learning,Pedagogy knowledge
+Q12_2,Demotivation and the role it plays in learning,Pedagogy knowledge
+Q12_3,How to motivate students,Skills development knowledge
+Q13_1,Instructional design practices,Skills development knowledge
+Q13_2,Reverse instructional design as a specific form of instructional design,Skills development knowledge
+Q14_1,Defining strong and effective learning objectives,Skills development knowledge
+Q14_2,Creating active learning assignments or opportunities,Skills development knowledge
+Q15_1,The difference between formative and summative assessments,Skills development knowledge
+Q15_2,How to design and assessments to understand student learning,Skills development knowledge
+Q15_3,How to do formative assessment in data science instruction,Skills development knowledge
+Q16_1,Providing constructive feedback to students,Skills development confidence
+Q16_2,Effectively motivating students,Skills development confidence
+Q16_3,Creating a positive learning environment,Skills development confidence
+Q16_4,Creating an inclusive learning environment,Skills development confidence
+Q16_5,Defining learning objectives,Skills development confidence
+Q16_6,Creating active learning assignments or activities that are effective,Skills development confidence
+Q16_7,Creating formative assessments,Skills development confidence
