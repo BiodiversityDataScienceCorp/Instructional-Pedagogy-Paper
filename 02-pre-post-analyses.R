@@ -102,3 +102,28 @@ results_table$adj_p <- p.adjust(p = results_table$p,
 write.csv(x = results_table,
           file = "output/pre-post-results.csv",
           row.names = FALSE)
+
+################################################################################
+# Want to know if starting (pre) values of knowledge were different from 
+# starting values of confidence
+question_info <- read.csv(file = "data/question-info.csv")
+
+# Add the question info to the survey data
+survey_data <- survey_data %>%
+  left_join(question_info, by = c("Question_number" = "question_id"))
+
+# We want a vector of knowledge pre scores and a vector of confidence pre 
+# scores
+knowledge_pre <- survey_data$Pre[survey_data$question_category %in% 
+                                   c("Pedagogy knowledge", 
+                                     "Skills development knowledge")]
+confidence_pre <- survey_data$Pre[survey_data$question_category == 
+                                    "Skills development confidence"]
+
+pre_t_test <- t.test(x = knowledge_pre,
+                     y = confidence_pre,
+                     paired = FALSE,
+                     var.equal = FALSE)
+sink(file = "output/knowledge-confidence-t.txt")
+pre_t_test
+sink()

@@ -1,0 +1,12 @@
+
+	Welch Two Sample t-test
+
+data:  knowledge_pre and confidence_pre
+t = -16.03, df = 710.24, p-value < 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.0999928 -0.8599472
+sample estimates:
+mean of x mean of y 
+ 2.964883  3.944853 
+
