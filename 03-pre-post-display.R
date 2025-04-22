@@ -1,15 +1,15 @@
-# Visualization of pre/post analysis results
+# Visualization and tabulation of pre/post analysis results
 # Jeff Oliver
 # jcoliver@arizona.edu
 # 2025-04-10
 
-# Plots are based on the output of 02-pre-post-analyses.R script
+# Plots and table are based on the output of 02-pre-post-analyses.R script
 # output/pre-post-results.csv
 
 library(dplyr)
 library(ggplot2)
 
-# Will have three separate plots, for three types of questions
+# Will have three separate plots (facets), for three types of questions
 #   1. Knowledge of pedagogical best practices, especially in regards to skills 
 #      development
 #   2. Knowledge of how to apply best practices for skills development
@@ -75,3 +75,28 @@ ggsave(filename = "output/pre-post-visualization.png",
        height = 8,
        width = 6.5,
        units = "in")
+
+################################################################################
+# A table of statistical results with question type, question text, t, df, adj p
+results_table <- results %>%
+  select(question_category, question_text, t, df, adj_p)
+
+# Let's go ahead and round t
+results_table <- results_table %>%
+  mutate(t = round(t, digits = 2))
+
+# Now, we want a column for p, but not with all the significant digits. 
+# Anything less than 0.001 should be replaced with "< 0.001"
+results_table <- results_table %>%
+  mutate(p = if_else(adj_p < 0.001, 
+                     true = "<0.001",
+                     false = as.character(round(adj_p, digits = 3))))
+
+# And now order things so they show up in same order as the figure
+results_table <- results_table %>%
+  arrange(question_category, question_text)
+
+# And write to csv
+write.csv(file = "output/pre-post-table.csv",
+          row.names = FALSE,
+          x = results_table)
