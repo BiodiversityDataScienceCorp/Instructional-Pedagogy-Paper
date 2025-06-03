@@ -6,14 +6,47 @@
 library(tidyr)
 library(dplyr)
 
-# Read in data
-raw <- read.csv(file = "data/survey-data-raw.csv")
+# Read in data for session 1
+raw_1 <- read.csv(file = "data/survey-data-raw-pd1.csv")
+
+# Start by filtering out any second or third year responses
+raw_1 <- raw_1 %>%
+  group_by(Participant.Code) %>%
+  arrange(Term) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Do the same for session 2
+raw_2 <- read.csv(file = "data/survey-data-raw-pd2.csv")
+raw_2 <- raw_2 %>%
+  group_by(Participant.Code) %>%
+  arrange(Term) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# For both sessions, we can drop the session number from the Term column, this 
+# will make joins easier
+raw_1 <- raw_1 %>%
+  mutate(Term = substr(x = Term, start = 1, stop = 4))
+raw_2 <- raw_2 %>%
+  mutate(Term = substr(x = Term, start = 1, stop = 4))
+
+
+# Join these two data together by person and Term (which is now effectively
+# Year). Note some participants (3 total) did session 1 and session 2 in 
+# different years. Will result in weirdness until we pivot to long
+raw <- raw_1 %>%
+  full_join(raw_2, by = join_by(Participant.Code, Term))
 
 # Transform to long
 raw_long <- raw %>%
   pivot_longer(cols = -c(Term, Participant.Code),
                names_to = "Question",
                values_to = "Response")
+
+# The multi-year delinquents results in a bunch of NAs to remove
+raw_long <- raw_long %>%
+  filter(!is.na(Response))
 
 # For easier sorting later, let's pre-append a zero before question 9
 raw_long <- raw_long %>%
@@ -54,10 +87,17 @@ raw_long <- raw_long %>%
                               x = Question_text))
 
 # Transform to wider, with one row per participant, one column for the question
-# and one column each for pre & post responses
+# and one column each for pre & post responses. 
+# Move em out, head em up, RAW WIDE!
 raw_wide <- raw_long %>%
   pivot_wider(names_from = Question_point,
               values_from = Response)
+
+# And since we need both pre/post anwsers for our purposes, remove rows with 
+# missing values in Pre or Post
+raw_wide <- raw_wide %>%
+  filter(!is.na(Pre)) %>%
+  filter(!is.na(Post))
 
 # Write to file
 write.csv(file = "data/survey-data-processed.csv",

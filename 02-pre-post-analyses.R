@@ -98,6 +98,13 @@ results_table <- results_list %>%
 results_table$adj_p <- p.adjust(p = results_table$p,
                                 method = "holm")
 
+# Before writing to file, go ahead and add question text
+question_info <- read.csv(file = "data/question-info.csv")
+
+# Add the question info to the results df
+results_table <- results_table %>%
+  left_join(question_info, by = join_by(question_id))
+
 # Write this output of stats to file
 write.csv(x = results_table,
           file = "output/pre-post-results.csv",
@@ -117,8 +124,9 @@ survey_data <- survey_data %>%
 knowledge_pre <- survey_data$Pre[survey_data$question_category %in% 
                                    c("Pedagogy knowledge", 
                                      "Skills development knowledge")]
-confidence_pre <- survey_data$Pre[survey_data$question_category == 
-                                    "Skills development confidence"]
+confidence_pre <- survey_data$Pre[survey_data$question_category %in%
+                                    c("Skills development confidence",
+                                      "Data science confidence")]
 
 pre_t_test <- t.test(x = knowledge_pre,
                      y = confidence_pre,
