@@ -93,7 +93,7 @@ raw_wide <- raw_long %>%
   pivot_wider(names_from = Question_point,
               values_from = Response)
 
-# And since we need both pre/post anwsers for our purposes, remove rows with 
+# And since we need both pre/post answers for our purposes, remove rows with 
 # missing values in Pre or Post
 raw_wide <- raw_wide %>%
   filter(!is.na(Pre)) %>%
@@ -103,3 +103,27 @@ raw_wide <- raw_wide %>%
 write.csv(file = "data/survey-data-processed.csv",
           row.names = FALSE,
           x = raw_wide)
+
+# Do some cleanup on the raw stipend data, too; note additional missing string
+stipend <- read.csv(file = "data/stipend-data-raw.csv", 
+                    na.strings = c("NA", "N/A"))
+
+# Remove trailing "_1" from Term column
+stipend <- stipend %>%
+  mutate(Term = gsub(pattern = "_1", 
+                     replacement = "",
+                     x = Term))
+
+# Let's rename that long column with stipend info
+stipend <- stipend %>%
+  rename(Stipend_influence = Did.stipend.influence.your.ability.to.participate...yes..maybe..no.)
+
+# We have multiple responses from some folks, let's take only one from each 
+# participant/status combination (at least one person had a status change)
+stipend <- stipend %>%
+  distinct(Participant.Code, Status, .keep_all = TRUE)
+
+# Write for subsequent analysis
+write.csv(file = "data/stipend-data-processed.csv",
+          row.names = FALSE,
+          x = stipend)

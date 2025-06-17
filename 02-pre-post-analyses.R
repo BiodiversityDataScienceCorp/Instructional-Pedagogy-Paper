@@ -111,8 +111,8 @@ write.csv(x = results_table,
           row.names = FALSE)
 
 ################################################################################
-# Want to know if starting (pre) values of knowledge were different from 
-# starting values of confidence
+# Want to know if starting (pre) values of skills development confidence were 
+# different from starting values of data science confidence
 question_info <- read.csv(file = "data/question-info.csv")
 
 # Add the question info to the survey data
@@ -121,17 +121,13 @@ survey_data <- survey_data %>%
 
 # We want a vector of knowledge pre scores and a vector of confidence pre 
 # scores
-knowledge_pre <- survey_data$Pre[survey_data$question_category %in% 
-                                   c("Pedagogy knowledge", 
-                                     "Skills development knowledge")]
-confidence_pre <- survey_data$Pre[survey_data$question_category %in%
-                                    c("Skills development confidence",
-                                      "Data science confidence")]
+skills_pre <- survey_data$Pre[survey_data$question_category == "Skills development confidence"]
+data_science_pre <- survey_data$Pre[survey_data$question_category == "Data science confidence"]
 
-pre_t_test <- t.test(x = knowledge_pre,
-                     y = confidence_pre,
+pre_t_test <- t.test(x = skills_pre,
+                     y = data_science_pre,
                      paired = FALSE,
                      var.equal = FALSE)
-sink(file = "output/knowledge-confidence-t.txt")
+sink(file = "output/confidence-t.txt")
 pre_t_test
 sink()
