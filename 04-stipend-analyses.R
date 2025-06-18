@@ -48,3 +48,19 @@ stipend_summary$Percentage <- stipend_summary$Count/nrow(stipend_data)
 # No                      7      0.233
 # Maybe                  10      0.333
 # Yes                    13      0.433
+
+# For the manuscript, we can create a contingency table
+stipend_table <- table(stipend_data$Stipend_influence, stipend_data$Status)
+
+# Add the column for count
+stipend_table <- cbind(stipend_table, rowSums(stipend_table))
+# Update the name of that new column
+colnames(stipend_table)[ncol(stipend_table)] <- "Total"
+
+# Add the column for percentage
+stipend_table <- cbind(stipend_table, stipend_table[, "Total"]/sum(stipend_table[, "Total"]))
+# Update column name, then turn into a percentage
+colnames(stipend_table)[ncol(stipend_table)] <- "Percent"
+stipend_table[, "Percent"] <- round(stipend_table[, "Percent"] * 100, 2)
+
+write.csv(x = stipend_table, file = "output/stipend-table.csv")
