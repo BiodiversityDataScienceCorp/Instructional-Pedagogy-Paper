@@ -1,5 +1,4 @@
-# Building institutional capacity for data science undergraduate instruction 
-from a domain perspective
+# Building institutional capacity for data science undergraduate instruction from a domain perspective
 
 This repository includes R code and data analyzing the impact of a summer 
 faculty professional development opportunity to increase data science training 
