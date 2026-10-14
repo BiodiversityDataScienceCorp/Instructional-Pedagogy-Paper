@@ -1,0 +1,7 @@
+
+	Wilcoxon rank sum test with continuity correction
+
+data:  skills_pre and data_science_pre
+W = 19504, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+

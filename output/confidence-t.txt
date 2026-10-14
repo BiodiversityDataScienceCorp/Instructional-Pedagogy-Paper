@@ -1,0 +1,12 @@
+
+	Welch Two Sample t-test
+
+data:  skills_pre and data_science_pre
+t = 8.8502, df = 212.17, p-value = 3.479e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.7328517 1.1528560
+sample estimates:
+mean of x mean of y 
+ 3.918660  2.975806 
+

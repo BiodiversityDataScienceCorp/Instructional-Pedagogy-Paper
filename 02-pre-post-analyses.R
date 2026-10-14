@@ -11,14 +11,16 @@ library(dplyr)
 #' @param xname,yname character names of columns to use for pre- and post-
 #'   workshop survey answers
 #' @param qname character name of question id column
-#' @param ... additional arguments passed to \code{t.test}
-#' @return list of statistics including summary stats and t-test results
+#' @param test character indicating test to run; "t" for a t-test, "T" for a 
+#' Wilcoxon signed rank
+#' @param ... additional arguments passed to \code{t.test} or \code{wilcox.test}
+#' @return list of statistics including summary stats and test results
 #' @example 
 #'   x <- rpois(n = 50, lambda = 5)
 #'   y <- rpois(n = 50, lambda = 4)
 #'   question_result(data = cbind(x, y), xname = "x", yname = "y", paired = TRUE)
-question_result <- function(data, xname = "pre", yname = "post", 
-                            qname = "question_id", ...) {
+question_result <- function(data, xname = "post", yname = "pre", 
+                            qname = "question_id", test = c("t", "T"), ...) {
   # Yeah, tibbles won't work in this function
   data <- as.data.frame(data)
   
@@ -41,23 +43,38 @@ question_result <- function(data, xname = "pre", yname = "post",
   y <- data[, yname]
   
   # Calculate mean pre, post, and difference
-  mean_pre <- mean(x)
-  mean_post <- mean(y)
+  mean_post <- mean(x)
+  mean_pre <- mean(y)
   mean_delta <- mean_post - mean_pre
   
-  # Run t-test
-  t_test <- t.test(x = x,
-                   y = y,
-                   ...)
+  if (test == "t") {
+    # Run t-test
+    h_test <- t.test(x = x,
+                     y = y,
+                     ...)
+  } else if (test == "T") {
+    # Run Wilcoxon
+    h_test <- wilcox.test(x = x,
+                          y = y, 
+                          ...)
+  } else {
+    stop("Unrecognized value for test (", test, "), should be 't' or 'T'.")
+  }
   
   # Package up results as list and return
-  return(list(question_id = data[1, qname],
+  results_list <- list(question_id = data[1, qname],
               mean_pre = mean_pre,
               mean_post = mean_post,
               mean_delta = mean_delta,
-              t = t_test$statistic,
-              df = t_test$parameter,
-              p = t_test$p.value))
+              t = h_test$statistic,
+              df = h_test$parameter,
+              p = h_test$p.value)
+  # Only need confidence intervals for t-test (not Wilcoxon)
+  if (test == "t") {
+    results_list["lwr"] <- h_test$conf.int[1]
+    results_list["upr"] <- h_test$conf.int[2]
+  }
+  return(results_list)
 }
 
 # Reality check #1
@@ -78,36 +95,72 @@ survey_data <- read.csv(file = "data/survey-data-processed.csv")
 survey_data <- survey_data %>%
   select(-c(Term, Participant.Code, Question_text))
 
+# Before writing results to file, will add question text
+question_info <- read.csv(file = "data/question-info.csv")
+
+####################
+#      t-tests     #
+####################
 # Analyses (paired t-tests) on each question
-results_list <- survey_data %>%
+t_results <- survey_data %>%
   group_by(Question_number) %>%
   group_map(~ question_result(data = .x, 
-                              xname = "Pre",
-                              yname = "Post",
+                              xname = "Post",
+                              yname = "Pre",
                               qname = "Question_number",
+                              test = "t",
                               paired = TRUE), 
             .keep = TRUE)
 
 # Go ahead and turn the results into a tibble
-results_table <- results_list %>%
+t_table <- t_results %>%
   bind_rows()
 
 # Calculate adjusted p values for multiple comparisons (Holm-Bonferroni); all 
 # but five comparisons significant (three of the five were significant without 
 # multiple comparison correction)
-results_table$adj_p <- p.adjust(p = results_table$p,
-                                method = "holm")
-
-# Before writing to file, go ahead and add question text
-question_info <- read.csv(file = "data/question-info.csv")
+t_table$adj_p <- p.adjust(p = t_table$p,
+                          method = "holm")
 
 # Add the question info to the results df
-results_table <- results_table %>%
+t_table <- t_table %>%
   left_join(question_info, by = join_by(question_id))
 
 # Write this output of stats to file
-write.csv(x = results_table,
-          file = "output/pre-post-results.csv",
+write.csv(x = t_table,
+          file = "output/pre-post-results-t.csv",
+          row.names = FALSE)
+
+##################
+# Wilcoxon tests #
+##################
+# Analyses (Wilcoxon signed-rank) on each question
+T_list <- survey_data %>%
+  group_by(Question_number) %>%
+  group_map(~ question_result(data = .x, 
+                              xname = "Post",
+                              yname = "Pre",
+                              qname = "Question_number",
+                              test = "T",
+                              paired = TRUE,
+                              exact = FALSE), 
+            .keep = TRUE)
+
+# Go ahead and turn the results into a tibble
+T_table <- T_list %>%
+  bind_rows()
+
+# Calculate adjusted p values for multiple comparisons (Holm-Bonferroni)
+T_table$adj_p <- p.adjust(p = T_table$p,
+                                method = "holm")
+
+# Add the question info to the results df
+T_table <- T_table %>%
+  left_join(question_info, by = join_by(question_id))
+
+# Write this output of stats to file
+write.csv(x = T_table,
+          file = "output/pre-post-results-T.csv",
           row.names = FALSE)
 
 ################################################################################
@@ -124,10 +177,19 @@ survey_data <- survey_data %>%
 skills_pre <- survey_data$Pre[survey_data$question_category == "Skills development confidence"]
 data_science_pre <- survey_data$Pre[survey_data$question_category == "Data science confidence"]
 
+# t-test
 pre_t_test <- t.test(x = skills_pre,
                      y = data_science_pre,
                      paired = FALSE,
                      var.equal = FALSE)
 sink(file = "output/confidence-t.txt")
 pre_t_test
+sink()
+
+# Mann Whitney
+pre_U_test <- wilcox.test(x = skills_pre,
+                          y = data_science_pre,
+                          paired = FALSE)
+sink(file = "output/confidence-U.txt")
+pre_U_test
 sink()

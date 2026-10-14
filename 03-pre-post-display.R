@@ -17,7 +17,7 @@ library(stringr) # For wrapping long axis labels
 #   3. Confidence in using best practices for skills development
 #   4. Confidence in developing data science materials
 
-results <- read.csv(file = "output/pre-post-results.csv")
+results <- read.csv(file = "output/pre-post-results-t.csv")
 
 # Add indicator of whether adjusted p is significant or not
 results <- results %>%
@@ -129,11 +129,12 @@ ggsave(filename = "output/pre-post-viz-confidence.png",
 ################################################################################
 # A table of statistical results with question type, question text, t, df, adj p
 results_table <- results %>%
-  select(question_category, question_text, t, df, adj_p)
+  select(question_category, question_text, t, df, adj_p, mean_delta, lwr, upr)
 
-# Let's go ahead and round t
+# Let's go ahead and round t, the mean difference and CI values
 results_table <- results_table %>%
-  mutate(t = round(t, digits = 2))
+  mutate(t = round(t, digits = 2)) %>%
+  mutate(across(mean_delta:upr, .fns = \(x) round(x, digits = 2)))
 
 # Now, we want a column for p, but not with all the significant digits. 
 # Anything less than 0.001 should be replaced with "< 0.001"
@@ -142,9 +143,15 @@ results_table <- results_table %>%
                      true = "<0.001",
                      false = as.character(round(adj_p, digits = 3))))
 
-# Since we are *only* reporting adjusted p-values, drop the "adj_p" column
+# Make a column with mean difference and (CI)
 results_table <- results_table %>%
-  select(-adj_p)
+  mutate(delta = paste0(mean_delta, " (", lwr, ", ", upr, ")"))
+
+# Since we are *only* reporting adjusted p-values, drop the "adj_p" column; 
+# also, we have combined mean difference and CI info into single column, so 
+# drop those individual columns, too
+results_table <- results_table %>%
+  select(-c(adj_p, mean_delta, lwr, upr))
 
 # And now order things so they show up in same order as the figure
 results_table <- results_table %>%
