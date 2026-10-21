@@ -5,9 +5,9 @@
 
 library(dplyr)
 
-#' Run t-test and return relevant statistics as a list
+#' Run test and return relevant statistics as a list
 #' 
-#' @param data two-column numeric vector (or data frame) for t-test.
+#' @param data two-column numeric vector (or data frame) for test.
 #' @param xname,yname character names of columns to use for pre- and post-
 #'   workshop survey answers
 #' @param qname character name of question id column
@@ -66,13 +66,17 @@ question_result <- function(data, xname = "post", yname = "pre",
               mean_pre = mean_pre,
               mean_post = mean_post,
               mean_delta = mean_delta,
-              t = h_test$statistic,
               df = h_test$parameter,
               p = h_test$p.value)
-  # Only need confidence intervals for t-test (not Wilcoxon)
+  # Only need confidence intervals for t-test (not Wilcoxon), also we use a 
+  # different name for our statistic column based on test (t-test: t, 
+  # Wilcoxon: T)
   if (test == "t") {
+    results_list["t"] <- h_test$statistic
     results_list["lwr"] <- h_test$conf.int[1]
     results_list["upr"] <- h_test$conf.int[2]
+  } else {
+    results_list["T"] <- h_test$statistic
   }
   return(results_list)
 }
@@ -97,6 +101,53 @@ survey_data <- survey_data %>%
 
 # Before writing results to file, will add question text
 question_info <- read.csv(file = "data/question-info.csv")
+
+####################################
+#  Normality tests (Shapiro-Wilk)  #
+####################################
+# For t-tests, we will want to test the assumption that our difference in 
+# scores is normally distributed
+
+# Calculate the difference in Post and Pre scores
+delta_data <- survey_data %>%
+  mutate(Delta = Post - Pre) %>%
+  select(Question_number, Delta)
+
+#' Run Shapiro-Wilk test for normality
+#' 
+#' @param data Data frame including numeric column of differences between Post- 
+#' and Pre-workshop survey answers
+#' @param dname Character name of column in \code{data} where differences are 
+#' stored
+#' @param qname Character name of column in \code{data} where the question 
+#' identifier is stored
+sw_test <- function(data, dname = "Delta", qname = "Question_number") {
+  data <- as.data.frame(data)
+  deltas <- data[, dname]
+  results <- shapiro.test(x = deltas)
+  return(list(p.value = results$p.value,
+              W = results$statistic,
+              Question_number = data[1, qname]))
+}
+
+# Run Shapiro-Wilk test on each question separately, then bind results into a 
+# single tibble
+sw_results <- delta_data %>%
+  group_by(Question_number) %>%
+  group_map(~ sw_test(data = .x),
+            .keep = TRUE) %>%
+  bind_rows()
+
+# See if any of the questions do not violate normality assumption
+any(sw_results$p.value >= 0.05)
+# FALSE
+
+# All fail the normality test, so present non-parametric results instead of 
+# t-test
+
+# Note: t-test results retained for posterity, but should probably not be used 
+# for interpretation. Wilcoxon signed-rank test results (which follow the t-test 
+# results) should be used instead.
 
 ####################
 #      t-tests     #

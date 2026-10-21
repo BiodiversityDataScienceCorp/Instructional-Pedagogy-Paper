@@ -4,7 +4,7 @@
 # 2025-04-10
 
 # Plots and table are based on the output of 02-pre-post-analyses.R script
-# output/pre-post-results.csv
+# output/pre-post-results-T.csv
 
 library(dplyr)
 library(ggplot2)
@@ -17,7 +17,7 @@ library(stringr) # For wrapping long axis labels
 #   3. Confidence in using best practices for skills development
 #   4. Confidence in developing data science materials
 
-results <- read.csv(file = "output/pre-post-results-t.csv")
+results <- read.csv(file = "output/pre-post-results-T.csv")
 
 # Add indicator of whether adjusted p is significant or not
 results <- results %>%
@@ -44,6 +44,9 @@ results <- results %>%
 # and post score. For now, using shade (gray is N.S., black is significant)
 # Experimented with linetype (dashed N.S.), but sometimes had no line because 
 # of small difference between pre- and post-workshop scores
+# This first plot still has all the results in a single plot; see the 
+# knowledge_pre_post and confidence_pre_post plots below for the ones used in 
+# the manuscript
 pre_post_plot <- ggplot(data = results, mapping = aes(y = question_id)) +
   geom_errorbar(mapping = aes(xmin = mean_pre, 
                               xmax = mean_post,
@@ -127,14 +130,20 @@ ggsave(filename = "output/pre-post-viz-confidence.png",
        units = "in")
 
 ################################################################################
-# A table of statistical results with question type, question text, t, df, adj p
+# Create an output table of statistical results with question type, question 
+# text, T, adj p
+# First order the rows to match the figure
 results_table <- results %>%
-  select(question_category, question_text, t, df, adj_p, mean_delta, lwr, upr)
+  arrange(desc(question_id))
+
+# Pull out just the columns of interest
+results_table <- results %>%
+  select(question_category, question_text, `T`, adj_p, mean_delta)
 
 # Let's go ahead and round t, the mean difference and CI values
 results_table <- results_table %>%
-  mutate(t = round(t, digits = 2)) %>%
-  mutate(across(mean_delta:upr, .fns = \(x) round(x, digits = 2)))
+  mutate(`T` = round(`T`, digits = 2)) %>%
+  mutate(mean_delta = round(mean_delta, digits = 2))
 
 # Now, we want a column for p, but not with all the significant digits. 
 # Anything less than 0.001 should be replaced with "< 0.001"
@@ -143,19 +152,22 @@ results_table <- results_table %>%
                      true = "<0.001",
                      false = as.character(round(adj_p, digits = 3))))
 
-# Make a column with mean difference and (CI)
-results_table <- results_table %>%
-  mutate(delta = paste0(mean_delta, " (", lwr, ", ", upr, ")"))
+# Make a column with mean difference
+# results_table <- results_table %>%
+#   mutate(delta = paste0(mean_delta, " (", lwr, ", ", upr, ")"))
 
 # Since we are *only* reporting adjusted p-values, drop the "adj_p" column; 
-# also, we have combined mean difference and CI info into single column, so 
-# drop those individual columns, too
+# results_table <- results_table %>%
+#   select(-c(adj_p, mean_delta, lwr, upr))
+
+# Rename mean difference column and drop the adj_p column
 results_table <- results_table %>%
-  select(-c(adj_p, mean_delta, lwr, upr))
+  rename(delta = mean_delta) %>%
+  select(-adj_p)
 
 # And now order things so they show up in same order as the figure
-results_table <- results_table %>%
-  arrange(question_category, question_text)
+# results_table <- results_table %>%
+#   arrange(question_category, question_text)
 
 # And write to csv
 write.csv(file = "output/pre-post-table.csv",
